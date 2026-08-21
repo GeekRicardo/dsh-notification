@@ -21,7 +21,18 @@
 # =============================================================================
 set -euo pipefail
 
-SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+say()  { printf '\033[32m[install]\033[0m %s\n' "$*"; }
+warn() { printf '\033[33m[warn]\033[0m %s\n' "$*" >&2; }
+die()  { printf '\033[31m[error]\033[0m %s\n' "$*" >&2; exit 1; }
+
+# curl | bash 管道模式下，脚本来自 stdin，BASH_SOURCE[0] 未定义，set -u 会报
+# unbound variable（此前仅噪音，不中断）。此时无法知道脚本真实位置，SELF_DIR 置空，
+# 供 --local 分支拒绝（否则 dirname 回退到 $0="bash"→cwd，会误判目录）。
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+  SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+  SELF_DIR=""
+fi
 DSH_HOME="${DSH_HOME:-${HOME:-${USERPROFILE:-}}/.dsh}"
 PROFILE_DIR="$DSH_HOME/profiles/web"
 PKG_JSON="$PROFILE_DIR/package.json"
@@ -33,16 +44,36 @@ RESTART=false
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
-    --local) DEP="link:${SELF_DIR}" ;;
+    # 管道模式下 BASH_SOURCE[0] 未定义，SELF_DIR 为空，--local 无意义，必须守卫
+    --local)
+      [ -n "$SELF_DIR" ] \
+        || die "curl | bash 管道模式下 --local 不可用；请下载脚本后本地运行：bash install.sh --local"
+      DEP="link:${SELF_DIR}" ;;
     --restart) RESTART=true ;;
-    -h|--help) sed -n '2,21p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) cat <<'EOF'
+dsh-notification 一键安装脚本（macOS / Linux / Windows Git Bash）
+
+包只在 GitHub、不发 npm，因此本脚本直接把 github 依赖写进 profile 的
+package.json（dependencies + dsh.profile.bundles），再 pnpm install 拉取。
+下次启动 DSH 时 profile boot 会读取包内 cordis.patch.yml 自动挂载插件行。
+
+用法：
+  curl -fsSL https://raw.githubusercontent.com/GeekRicardo/dsh-notification/main/install.sh | bash
+
+  或下载后本地运行：bash install.sh [--dry-run] [--local] [--restart]
+
+  --dry-run   只打印将要执行的操作，不写任何文件。
+  --local     装本地这份检出（link:<脚本所在目录>）而不是 GitHub 版，便于开发。
+  --restart   装完后尝试重启 DSH web（pm2 托管时自动，否则提示手动）。
+              默认不重启：重启会打断正在跑的会话。
+  -h/--help   打印本帮助。
+
+环境变量（均可省略）：DSH_HOME（默认 ~/.dsh）
+EOF
+      exit 0 ;;
     *) echo "未知参数: ${arg}（用 -h 查看用法）" >&2; exit 2 ;;
   esac
 done
-
-say()  { printf '\033[32m[install]\033[0m %s\n' "$*"; }
-warn() { printf '\033[33m[warn]\033[0m %s\n' "$*" >&2; }
-die()  { printf '\033[31m[error]\033[0m %s\n' "$*" >&2; exit 1; }
 
 command -v node >/dev/null 2>&1 || die "未找到 node（DSH 需要 Node.js ≥ 20）"
 command -v pnpm >/dev/null 2>&1 || die "未找到 pnpm"
