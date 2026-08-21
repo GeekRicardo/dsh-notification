@@ -1,0 +1,8 @@
+# dsh-notification bundle patch
+#
+# 安装后（dependencies + dsh.profile.bundles 均含 dsh-notification），
+# 启动时 profile boot 会合并本 patch，把插件行插入 host composition。
+# 插件全部能力在 web client，host 侧只作挂载点。
+- insert:
+    - id: dsh-notification
+      name: 'dsh-notification'

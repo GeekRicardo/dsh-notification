@@ -1,0 +1,12 @@
+{
+  "name": "dsh-notification",
+  "description": "DeepSeek Harness web 插件：权限审批 / 提问 / 本轮完成时发浏览器系统通知",
+  "version": "0.1.0",
+  "entry": {
+    "name": "dsh-notification",
+    "inject": []
+  },
+  "client": {
+    "platform": "web"
+  }
+}
