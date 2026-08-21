@@ -22,6 +22,7 @@ jobs:
       - name: Install script syntax
         run: bash -n install.sh
       - name: Bundle patch parses
-        run: grep -q "id: dsh-notification" cordis.patch.yml
+        run: |
+          grep -q "id: dsh-notification" cordis.patch.yml
       - name: Unit tests
         run: node --test test/*.test.mjs
