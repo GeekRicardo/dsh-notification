@@ -1,6 +1,6 @@
 {
   "name": "dsh-notification",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DeepSeek Harness web 插件：会话被阻塞等待你时弹浏览器系统通知——标题是对话标题，正文是具体动作（权限审批的工具与命令 / 提问 / 本轮完成）。",
   "type": "module",
   "main": "lib/index.js",
@@ -14,10 +14,7 @@
       "patch": "./cordis.patch.yml"
     },
     "client": {
-      "platform": "web",
-      "inject": [
-        "@deepseek-ai/dsh-client-runtime"
-      ]
+      "platform": "web"
     }
   },
   "files": [
